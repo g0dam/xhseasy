@@ -1,0 +1,17 @@
+node_modules/
+dist/
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+.env
+.env.local
+.env.*.local
+landing-*.png
+editor-view.png
+editor-polish*.png
+editor-mobile-polish.png
+export-cdp-test.png
+export-cdp-test-*.png
+vite-dev*.log
+
+.vercel
+.tmp-chrome-profile/
