@@ -2,6 +2,8 @@
 
 This editor accepts normal Markdown plus a small custom syntax layer for Xiaohongshu card writing.
 
+When asked to write a note, produce the finished note content. Use this file only to ensure the syntax is valid.
+
 ## Standard Markdown
 
 Use:

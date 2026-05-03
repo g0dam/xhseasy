@@ -1,6 +1,8 @@
 # XHS Page Components
 
-Use fenced `xhs-page` blocks for structured visual cards. The syntax is YAML-like, not full YAML.
+This file is a reference for writing articles, not the final answer to a writing request.
+
+Use fenced `xhs-page` blocks as structured visual cards inside a Xiaohongshu article. When the user asks for an article, choose useful components and fill them with real content. Do not return this component catalog as the answer.
 
 Common rules:
 

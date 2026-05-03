@@ -10,6 +10,8 @@
 - https://www.xhseasy.top/xhs-markdown.md
 - https://www.xhseasy.top/components.md
 
+注意：默认任务是撰写完整小红书文章。组件说明只是为了让文章能使用本站自定义排版块，不要把组件列表当成最终输出。
+
 ## 核心能力
 
 - Markdown 写作与实时预览

@@ -1,7 +1,7 @@
 {
   "name": "xhseasy",
   "version": "1.0.0",
-  "description": "Agent-facing guide for generating Markdown Xiaohongshu notes for https://www.xhseasy.top/",
+  "description": "Agent-facing guide for writing complete Markdown Xiaohongshu articles/notes for https://www.xhseasy.top/. The primary deliverable is the article; components are optional formatting blocks inside it.",
   "homepage": "https://www.xhseasy.top/",
   "category": "content-generation",
   "files": {
@@ -23,6 +23,7 @@
   ],
   "output": {
     "primary": "Markdown",
+    "deliverable": "complete Xiaohongshu article/note",
     "paste_target": "https://www.xhseasy.top/",
     "supports_custom_components": true
   }
