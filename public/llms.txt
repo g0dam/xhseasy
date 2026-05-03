@@ -2,6 +2,14 @@
 
 小红书排版工具是一款面向内容创作者的 Web 应用，用于把 Markdown 文稿转换为适合小红书发布的竖版长图。
 
+## Agent 入口
+
+如果你是 AI agent，需要为本网站生成可直接粘贴的 Markdown 小红书笔记，请先读取：
+
+- https://www.xhseasy.top/skill.md
+- https://www.xhseasy.top/xhs-markdown.md
+- https://www.xhseasy.top/components.md
+
 ## 核心能力
 
 - Markdown 写作与实时预览

@@ -1,0 +1,29 @@
+{
+  "name": "xhseasy",
+  "version": "1.0.0",
+  "description": "Agent-facing guide for generating Markdown Xiaohongshu notes for https://www.xhseasy.top/",
+  "homepage": "https://www.xhseasy.top/",
+  "category": "content-generation",
+  "files": {
+    "skill.md": "https://www.xhseasy.top/skill.md",
+    "xhs-markdown.md": "https://www.xhseasy.top/xhs-markdown.md",
+    "components.md": "https://www.xhseasy.top/components.md",
+    "templates.md": "https://www.xhseasy.top/templates.md",
+    "api.md": "https://www.xhseasy.top/api.md",
+    "design.md": "https://www.xhseasy.top/design.md",
+    "workflows/write-xhs-note.md": "https://www.xhseasy.top/workflows/write-xhs-note.md"
+  },
+  "triggers": [
+    "小红书排版",
+    "小红书笔记",
+    "xhseasy",
+    "xhs markdown",
+    "生成小红书长图文案",
+    "写一篇小红书笔记"
+  ],
+  "output": {
+    "primary": "Markdown",
+    "paste_target": "https://www.xhseasy.top/",
+    "supports_custom_components": true
+  }
+}
