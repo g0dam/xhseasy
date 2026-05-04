@@ -89,6 +89,7 @@
   --app-editor-w: 46%;
   --app-preview-w: 54%;
   --preview-max-w: 100%;
+  --component-sidebar-w: 258px;
   /* 导出比例（默认 3:4） */
   --note-card-ratio: 3/4;
   --note-card-w: 405px;
@@ -1315,6 +1316,13 @@ body:has(.landing-page) {
   display: flex;
   flex: 1;
   min-height: 0;
+  position: relative;
+}
+
+.app-layout--resizing,
+.app-layout--resizing * {
+  cursor: col-resize !important;
+  user-select: none;
 }
 
 /* 编辑区 */
@@ -1329,13 +1337,23 @@ body:has(.landing-page) {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  transition: width 0.18s ease, flex-basis 0.18s ease;
+}
+
+.app-layout--resizing .pane-editor {
+  transition: none;
 }
 
 .pane-editor-shell {
   display: grid;
-  grid-template-columns: 258px minmax(0, 1fr);
+  grid-template-columns: var(--component-sidebar-w) minmax(0, 1fr);
   flex: 1;
   min-height: 0;
+  transition: grid-template-columns 0.18s ease;
+}
+
+.pane-editor-shell--components-collapsed {
+  --component-sidebar-w: 54px;
 }
 
 .editor-workspace {
@@ -1431,6 +1449,46 @@ body:has(.landing-page) {
   cursor: pointer;
 }
 
+.layout-resizer {
+  position: relative;
+  flex: 0 0 12px;
+  width: 12px;
+  min-width: 12px;
+  min-height: 0;
+  cursor: col-resize;
+  background:
+    linear-gradient(180deg, rgba(255,252,247,0.62), rgba(230,220,204,0.62));
+  border-left: 1px solid rgba(var(--card-text-rgb),0.05);
+  border-right: 1px solid rgba(var(--card-text-rgb),0.08);
+  z-index: 12;
+}
+
+.layout-resizer span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 96px;
+  border-radius: 999px;
+  background: rgba(133,105,76,0.22);
+  transform: translate(-50%, -50%);
+  transition: width 0.14s ease, height 0.14s ease, background 0.14s ease, box-shadow 0.14s ease;
+}
+
+.layout-resizer:hover span,
+.layout-resizer:focus-visible span,
+.app-layout--resizing .layout-resizer span {
+  width: 4px;
+  height: 132px;
+  background: rgba(196,92,38,0.72);
+  box-shadow: 0 0 0 5px rgba(196,92,38,0.08);
+}
+
+.layout-resizer:focus-visible {
+  outline: 2px solid rgba(196,92,38,0.45);
+  outline-offset: -3px;
+}
+
 .component-sidebar {
   min-width: 0;
   min-height: 0;
@@ -1445,10 +1503,24 @@ body:has(.landing-page) {
   gap: 16px;
 }
 
+.component-sidebar--collapsed {
+  overflow: hidden;
+  padding: 10px 8px;
+  align-items: center;
+  justify-content: stretch;
+}
+
 .component-sidebar__header {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+.component-sidebar__header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .component-sidebar__header h2 {
@@ -1478,6 +1550,77 @@ body:has(.landing-page) {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: 4px;
+}
+
+.component-sidebar__toggle,
+.component-sidebar__rail-button {
+  appearance: none;
+  border: 1px solid rgba(var(--card-text-rgb),0.1);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.88), rgba(250,243,234,0.84));
+  color: #8c542f;
+  box-shadow:
+    0 8px 18px rgba(77,53,26,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.74);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.component-sidebar__toggle {
+  width: 30px;
+  height: 30px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 21px;
+  line-height: 1;
+}
+
+.component-sidebar__rail-button {
+  width: 38px;
+  min-height: 168px;
+  flex: 1 1 auto;
+  border-radius: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 6px;
+  color: #9b5b32;
+}
+
+.component-sidebar__toggle:hover,
+.component-sidebar__rail-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(196,92,38,0.24);
+  box-shadow:
+    0 12px 24px rgba(77,53,26,0.09),
+    inset 0 1px 0 rgba(255,255,255,0.86);
+}
+
+.component-sidebar__rail-mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(196,92,38,0.12);
+  color: #b95a25;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.component-sidebar__rail-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
 }
 
 .component-library {
@@ -1838,4 +1981,3 @@ body:has(.landing-page) {
   transform: translateY(-1px);
 }
 .editor-bar .bar-sep { width: 1px; height: 20px; background: rgba(var(--card-text-rgb),0.1); align-self: center; margin: 0 2px; }
-

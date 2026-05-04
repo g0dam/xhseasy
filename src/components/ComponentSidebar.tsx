@@ -101,9 +101,13 @@ function TemplatePreview({ kind }: { kind: PageTemplateKind }) {
 export function ComponentSidebar({
   templates,
   onInsertSnippet,
+  collapsed,
+  onCollapsedChange,
 }: {
   templates: PageTemplateDefinition[];
   onInsertSnippet: (snippet: string, mode: "cursor" | "append") => void;
+  collapsed: boolean;
+  onCollapsedChange: (collapsed: boolean) => void;
 }) {
   const orderedTemplates = useMemo(() => {
     return [...templates].sort((left, right) => {
@@ -114,10 +118,38 @@ export function ComponentSidebar({
     });
   }, [templates]);
 
+  if (collapsed) {
+    return (
+      <aside className="component-sidebar component-sidebar--collapsed" aria-label="组件库已折叠">
+        <button
+          type="button"
+          className="component-sidebar__rail-button"
+          onClick={() => onCollapsedChange(false)}
+          aria-label="展开组件区"
+          title="展开组件区"
+        >
+          <span className="component-sidebar__rail-mark">+</span>
+          <span className="component-sidebar__rail-text">组件</span>
+        </button>
+      </aside>
+    );
+  }
+
   return (
-    <aside className="component-sidebar">
+    <aside className="component-sidebar" aria-label="组件库">
       <div className="component-sidebar__header">
-        <span className="component-sidebar__eyebrow">Components</span>
+        <div className="component-sidebar__header-top">
+          <span className="component-sidebar__eyebrow">Components</span>
+          <button
+            type="button"
+            className="component-sidebar__toggle"
+            onClick={() => onCollapsedChange(true)}
+            aria-label="折叠组件区"
+            title="折叠组件区"
+          >
+            ‹
+          </button>
+        </div>
         <h2>插入组件</h2>
         <p>从左侧挑一个结构块，直接插进文稿里。</p>
       </div>

@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from "react";
 import type { EditorSettings, ThemeConfig } from "@/types";
 import { ACTIVE_DECOR_KEY, defaultSettings, loadStoredSettings, persistSettings } from "@/store/store";
 import { expandPbnImages, collapseDataImagesToPlaceholders } from "@/markdown/pbnImages";
@@ -50,6 +51,35 @@ type TemplateSafeSegment = {
   start: number;
   end: number;
 };
+
+const EDITOR_PANE_WIDTH_KEY = "xhs_paiban_editor_pane_width_v1";
+const COMPONENT_SIDEBAR_COLLAPSED_KEY = "xhs_paiban_component_sidebar_collapsed_v1";
+const DEFAULT_EDITOR_PANE_PERCENT = 46;
+const MIN_EDITOR_PANE_PERCENT = 30;
+const MAX_EDITOR_PANE_PERCENT = 72;
+
+function clampEditorPanePercent(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_EDITOR_PANE_PERCENT;
+  return Math.min(MAX_EDITOR_PANE_PERCENT, Math.max(MIN_EDITOR_PANE_PERCENT, value));
+}
+
+function loadStoredEditorPanePercent(): number {
+  try {
+    const raw = localStorage.getItem(EDITOR_PANE_WIDTH_KEY);
+    if (!raw) return DEFAULT_EDITOR_PANE_PERCENT;
+    return clampEditorPanePercent(Number(raw));
+  } catch {
+    return DEFAULT_EDITOR_PANE_PERCENT;
+  }
+}
+
+function loadStoredComponentSidebarCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COMPONENT_SIDEBAR_COLLAPSED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
 
 function buildXhsInlineStyle(options: {
   size?: "sm" | "md" | "lg" | string;
@@ -170,6 +200,13 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
   const [editorHidden, setEditorHidden] = useState(false);
+  const [componentSidebarCollapsed, setComponentSidebarCollapsed] = useState(() =>
+    loadStoredComponentSidebarCollapsed()
+  );
+  const [editorPanePercent, setEditorPanePercent] = useState(() =>
+    loadStoredEditorPanePercent()
+  );
+  const [editorPaneResizing, setEditorPaneResizing] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [embeddedAssets, setEmbeddedAssets] = useState<Record<string, string>>({});
   const [mdStorageReady, setMdStorageReady] = useState(false);
@@ -185,6 +222,7 @@ export function App() {
   const mdSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settingsSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const layoutRef = useRef<HTMLDivElement>(null);
   const editorBodyRef = useRef<HTMLDivElement>(null);
   const previewScrollRef = useRef<HTMLDivElement>(null);
   const scrollSyncLockRef = useRef(false);
@@ -221,6 +259,94 @@ export function App() {
         }
       }
       requestAnimationFrame(() => { scrollSyncLockRef.current = false; });
+    },
+    []
+  );
+
+  const appLayoutStyle = useMemo(
+    () => ({ "--app-editor-w": `${editorPanePercent}%` }) as CSSProperties,
+    [editorPanePercent]
+  );
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(COMPONENT_SIDEBAR_COLLAPSED_KEY, String(componentSidebarCollapsed));
+    } catch {
+      /* quota / private mode */
+    }
+  }, [componentSidebarCollapsed]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(EDITOR_PANE_WIDTH_KEY, String(editorPanePercent));
+    } catch {
+      /* quota / private mode */
+    }
+  }, [editorPanePercent]);
+
+  const handleLayoutResizeStart = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (editorHidden) return;
+      const layout = layoutRef.current;
+      if (!layout) return;
+      const rect = layout.getBoundingClientRect();
+      if (rect.width <= 0) return;
+
+      event.preventDefault();
+      setEditorPaneResizing(true);
+
+      const minEditorPx = componentSidebarCollapsed ? 390 : 560;
+      const minPreviewPx = 420;
+      const maxEditorPx = Math.max(minEditorPx, rect.width - minPreviewPx);
+
+      const updateFromClientX = (clientX: number) => {
+        const rawWidth = clientX - rect.left;
+        const nextWidth = Math.min(maxEditorPx, Math.max(minEditorPx, rawWidth));
+        const nextPercent = Math.round((nextWidth / rect.width) * 1000) / 10;
+        setEditorPanePercent(clampEditorPanePercent(nextPercent));
+      };
+
+      const previousCursor = document.body.style.cursor;
+      const previousUserSelect = document.body.style.userSelect;
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+
+      const handlePointerMove = (moveEvent: PointerEvent) => {
+        updateFromClientX(moveEvent.clientX);
+      };
+
+      const stopResize = () => {
+        window.removeEventListener("pointermove", handlePointerMove);
+        window.removeEventListener("pointerup", stopResize);
+        window.removeEventListener("pointercancel", stopResize);
+        document.body.style.cursor = previousCursor;
+        document.body.style.userSelect = previousUserSelect;
+        setEditorPaneResizing(false);
+      };
+
+      window.addEventListener("pointermove", handlePointerMove);
+      window.addEventListener("pointerup", stopResize);
+      window.addEventListener("pointercancel", stopResize);
+    },
+    [componentSidebarCollapsed, editorHidden]
+  );
+
+  const handleLayoutResizeKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "Home" && event.key !== "End") {
+        return;
+      }
+      event.preventDefault();
+      if (event.key === "Home") {
+        setEditorPanePercent(MIN_EDITOR_PANE_PERCENT);
+        return;
+      }
+      if (event.key === "End") {
+        setEditorPanePercent(MAX_EDITOR_PANE_PERCENT);
+        return;
+      }
+      const delta = event.key === "ArrowLeft" ? -3 : 3;
+      setEditorPanePercent((prev) => clampEditorPanePercent(prev + delta));
     },
     []
   );
@@ -747,15 +873,21 @@ export function App() {
       />
 
       {/* 主内容 */}
-      <div className="app-layout">
+      <div
+        className={`app-layout${editorPaneResizing ? " app-layout--resizing" : ""}`}
+        ref={layoutRef}
+        style={appLayoutStyle}
+      >
 
         {/* 编辑区 */}
         {!editorHidden && (
           <div className="pane-editor">
-            <div className="pane-editor-shell">
+            <div className={`pane-editor-shell${componentSidebarCollapsed ? " pane-editor-shell--components-collapsed" : ""}`}>
               <ComponentSidebar
                 templates={pageTemplates}
                 onInsertSnippet={insertSnippet}
+                collapsed={componentSidebarCollapsed}
+                onCollapsedChange={setComponentSidebarCollapsed}
               />
 
               <div className="editor-workspace">
@@ -813,6 +945,25 @@ export function App() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {!editorHidden && (
+          <div
+            className="layout-resizer"
+            role="separator"
+            aria-label="调整编辑区和预览区宽度"
+            aria-orientation="vertical"
+            aria-valuemin={MIN_EDITOR_PANE_PERCENT}
+            aria-valuemax={MAX_EDITOR_PANE_PERCENT}
+            aria-valuenow={Math.round(editorPanePercent)}
+            tabIndex={0}
+            title="拖拽调整编辑区和预览区宽度，双击恢复默认"
+            onPointerDown={handleLayoutResizeStart}
+            onDoubleClick={() => setEditorPanePercent(DEFAULT_EDITOR_PANE_PERCENT)}
+            onKeyDown={handleLayoutResizeKeyDown}
+          >
+            <span />
           </div>
         )}
 
