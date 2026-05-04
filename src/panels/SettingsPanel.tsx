@@ -16,10 +16,15 @@ interface SettingsPanelProps {
 }
 
 export function SettingsPanel({ settings, onUpdate, onReset, open, onClose }: SettingsPanelProps) {
+  if (!open) return null;
+
+  const hasBackgroundImage = settings.backgroundImageSrc.trim().length > 0;
+  const showBackgroundEffects = settings.backgroundMode === "image" && hasBackgroundImage;
+
   return (
     <>
-      <div id="settings-overlay" className={open ? "visible" : ""} onClick={onClose} />
-      <div id="settings-panel" className={open ? "open" : ""}>
+      <div id="settings-overlay" className="visible" onClick={onClose} />
+      <div id="settings-panel" className="open">
         <div className="settings-header">
           <h2>设置</h2>
           <button className="settings-close" onClick={onClose}>✕</button>
@@ -43,7 +48,7 @@ export function SettingsPanel({ settings, onUpdate, onReset, open, onClose }: Se
             <div className="settings-row"><label>卡片背景色</label><input type="color" value={settings.cardBg} onChange={(e) => onUpdate({ cardBg: e.target.value })} /></div>
             <div className="settings-row"><label>正文文字色</label><input type="color" value={settings.cardText} onChange={(e) => onUpdate({ cardText: e.target.value })} /></div>
             <div className="settings-row"><label>强调色</label><input type="color" value={settings.accent} onChange={(e) => onUpdate({ accent: e.target.value })} /></div>
-            <div className="settings-row"><label>页面背景色</label><input type="color" value={settings.bodyBg} onChange={(e) => onUpdate({ bodyBg: e.target.value })} /></div>
+            <div className="settings-row"><label>工作区背景色</label><input type="color" value={settings.bodyBg} onChange={(e) => onUpdate({ bodyBg: e.target.value })} /></div>
             <div className="settings-btn-row"><button onClick={onReset}>恢复默认</button></div>
           </div>
 
@@ -88,7 +93,7 @@ export function SettingsPanel({ settings, onUpdate, onReset, open, onClose }: Se
           </div>
 
           <div className="settings-section">
-            <h3>组件风格</h3>
+            <h3>模板组件风格</h3>
             <div className="settings-row">
               <label>内容密度</label>
               <select value={settings.contentDensity} onChange={(e) => {
@@ -128,21 +133,10 @@ export function SettingsPanel({ settings, onUpdate, onReset, open, onClose }: Se
               </select>
             </div>
             <div className="settings-row settings-row--col">
-              <span className="settings-label-top">背景预设</span>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {BACKGROUND_PRESETS.map((preset) => (
-                  <button key={preset.name} className="preset-chip" type="button"
-                    onClick={() => onUpdate({ backgroundOverlay: preset.overlay, backgroundDim: preset.dim, backgroundBlur: preset.blur })}>
-                    {preset.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="settings-row settings-row--col">
               <span className="settings-label-top">背景图片</span>
               <div className="settings-avatar-row">
                 <div className="settings-bg-preview">
-                  {settings.backgroundMode === "image" && settings.backgroundImageSrc ? <img src={settings.backgroundImageSrc} alt="" /> : <div className="settings-bg-preview__empty">无背景图</div>}
+                  {hasBackgroundImage ? <img src={settings.backgroundImageSrc} alt="" /> : <div className="settings-bg-preview__empty">无背景图</div>}
                 </div>
                 <div className="settings-avatar-actions">
                   <label className="settings-file-btn">
@@ -162,16 +156,31 @@ export function SettingsPanel({ settings, onUpdate, onReset, open, onClose }: Se
                 </div>
               </div>
             </div>
-            <div className="settings-row">
-              <label>铺满方式</label>
-              <select value={settings.backgroundImageFit} onChange={(e) => onUpdate({ backgroundImageFit: e.target.value as EditorSettings["backgroundImageFit"] })}>
-                <option value="cover">铺满裁切</option>
-                <option value="contain">完整显示</option>
-              </select>
-            </div>
-            <div className="settings-row"><label>遮罩色</label><input type="text" className="settings-input settings-input--inline" value={settings.backgroundOverlay} onChange={(e) => onUpdate({ backgroundOverlay: e.target.value })} spellCheck={false} /></div>
-            <div className="settings-row"><label>压暗强度</label><div className="range-with-val"><input type="range" min="0" max="70" step="1" value={settings.backgroundDim} onChange={(e) => onUpdate({ backgroundDim: Number(e.target.value) })} /><span>{settings.backgroundDim}</span></div></div>
-            <div className="settings-row"><label>背景模糊</label><div className="range-with-val"><input type="range" min="0" max="24" step="1" value={settings.backgroundBlur} onChange={(e) => onUpdate({ backgroundBlur: Number(e.target.value) })} /><span>{settings.backgroundBlur}px</span></div></div>
+            {showBackgroundEffects ? (
+              <>
+                <div className="settings-row settings-row--col">
+                  <span className="settings-label-top">背景预设</span>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                    {BACKGROUND_PRESETS.map((preset) => (
+                      <button key={preset.name} className="preset-chip" type="button"
+                        onClick={() => onUpdate({ backgroundOverlay: preset.overlay, backgroundDim: preset.dim, backgroundBlur: preset.blur })}>
+                        {preset.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="settings-row">
+                  <label>铺满方式</label>
+                  <select value={settings.backgroundImageFit} onChange={(e) => onUpdate({ backgroundImageFit: e.target.value as EditorSettings["backgroundImageFit"] })}>
+                    <option value="cover">铺满裁切</option>
+                    <option value="contain">完整显示</option>
+                  </select>
+                </div>
+                <div className="settings-row"><label>遮罩色</label><input type="text" className="settings-input settings-input--inline" value={settings.backgroundOverlay} onChange={(e) => onUpdate({ backgroundOverlay: e.target.value })} spellCheck={false} /></div>
+                <div className="settings-row"><label>压暗强度</label><div className="range-with-val"><input type="range" min="0" max="70" step="1" value={settings.backgroundDim} onChange={(e) => onUpdate({ backgroundDim: Number(e.target.value) })} /><span>{settings.backgroundDim}</span></div></div>
+                <div className="settings-row"><label>背景模糊</label><div className="range-with-val"><input type="range" min="0" max="24" step="1" value={settings.backgroundBlur} onChange={(e) => onUpdate({ backgroundBlur: Number(e.target.value) })} /><span>{settings.backgroundBlur}px</span></div></div>
+              </>
+            ) : null}
           </div>
 
           <div className="settings-section">

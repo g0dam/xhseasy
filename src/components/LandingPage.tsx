@@ -296,14 +296,14 @@ export function LandingPage({
             <button className="landing-btn landing-btn--primary" type="button" onClick={onStart}>开始排版</button>
             <button className="landing-btn landing-btn--secondary" type="button" onClick={onOpenTemplates}>查看模板</button>
           </div>
-          <div className="landing-proof" aria-label="用户数">
+          <div className="landing-proof" aria-label="适用人群">
             <div className="landing-avatars">
               <span />
               <span />
               <span />
               <span />
             </div>
-            <span>10,000+ 创作者正在使用</span>
+            <span>面向知识博主、AI 创作者和运营团队</span>
           </div>
         </div>
         <HeroPreview />
@@ -421,7 +421,7 @@ export function LandingPage({
             <img src="/assets/xhs-qr.webp" alt="正先森 AI 手记小红书二维码" width="207" height="216" loading="lazy" />
           </div>
           <strong>扫码打开小红书主页</strong>
-          <p>正先森 AI 手记 · AI 随便开发者</p>
+          <p>正先森 AI 手记 · AI 独立开发者</p>
         </aside>
       </section>
 
@@ -465,7 +465,7 @@ export function LandingPage({
         <span className="landing-mark landing-mark--small" />
         <strong>小红书排版工具</strong>
         <p>让写作与排版成为一件愉快的事</p>
-        <small>© 2024 Xiaohongshu Paiban. All rights reserved.</small>
+        <small>© 2026 Xiaohongshu Paiban. All rights reserved.</small>
       </footer>
     </main>
   );

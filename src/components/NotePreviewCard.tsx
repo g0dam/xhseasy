@@ -330,6 +330,7 @@ export function NotePreviewCard({
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
+  const hasPageBackgroundImage = settings.backgroundMode === "image" && settings.backgroundImageSrc.trim().length > 0;
 
   useEffect(() => {
     const root = document.documentElement;
@@ -506,6 +507,17 @@ export function NotePreviewCard({
         <span className="sep">·</span>
         <span>{formattedDate}</span>
       </div>
+    );
+  }
+
+  function renderPageBackground() {
+    if (!hasPageBackgroundImage) return null;
+    return (
+      <>
+        <div className="xhs-page-background" aria-hidden="true" />
+        <div className="xhs-page-background-overlay" aria-hidden="true" />
+        <div className="xhs-page-background-grain" aria-hidden="true" />
+      </>
     );
   }
 
@@ -1332,9 +1344,6 @@ export function NotePreviewCard({
 
   return (
     <div className="xhs-stage" id="capture-target" ref={rootRef}>
-      <div className="xhs-stage__background" aria-hidden="true" />
-      <div className="xhs-stage__overlay" aria-hidden="true" />
-      <div className="xhs-stage__grain" aria-hidden="true" />
       <div className="xhs-measure-root" ref={measureRef} aria-hidden="true">
         <article
           className="xhs-export-page-card note-block--body xhs-measure-card"
@@ -1379,6 +1388,7 @@ export function NotePreviewCard({
                 data-advanced-template={activeAdvancedVariant}
                 style={{ height: pageHeight, position: "relative" }}
               >
+                {renderPageBackground()}
                 {/* Layer 1: 内容区 */}
                 <div className="note-content">
                   {showMeta && settings.noteMetaPosition === "top" ? renderNoteMeta() : null}
@@ -1401,6 +1411,7 @@ export function NotePreviewCard({
               data-advanced-template={activeAdvancedVariant}
               style={{ height: pageHeight, position: "relative" }}
             >
+              {renderPageBackground()}
               {/* Layer 1: 内容区 — 装饰的 safe zone，有明确边界 */}
               <div className="note-content">
                 {showMeta && settings.noteMetaPosition === "top" ? renderNoteMeta() : null}

@@ -11,8 +11,10 @@ interface EmojiPanelProps {
 }
 
 export function EmojiPanel({ open, onSelect, onClose }: EmojiPanelProps) {
+  if (!open) return null;
+
   return (
-    <div id="emoji-panel" className={open ? "open" : ""}>
+    <div id="emoji-panel" className="open">
       <div className="emoji-grid">
         {EMOJIS.map((e) => (
           <button

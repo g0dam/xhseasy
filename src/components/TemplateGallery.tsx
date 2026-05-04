@@ -382,7 +382,7 @@ function TemplateHoverPreview({
   return (
     <div
       style={{
-        position: "fixed",
+        position: "relative",
         zIndex: 9999,
         width: `${previewW + 32}px`,
         pointerEvents: "none",

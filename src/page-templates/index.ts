@@ -382,7 +382,7 @@ export function getPageTemplateDefinitions(): PageTemplateDefinition[] {
 export function getPageTemplateAccent(value: unknown, fallback: string): string {
   const key = typeof value === "string" ? value : "";
   if (!key || key === "inherit") return fallback;
-  if (ACCENT_MAP[key]) return fallback;
+  if (ACCENT_MAP[key]) return ACCENT_MAP[key];
   return /^#([0-9a-f]{6})$/i.test(key) ? key : fallback;
 }
 
