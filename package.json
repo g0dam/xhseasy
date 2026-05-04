@@ -2,6 +2,14 @@
   "name": "xiaohongshu-paiban",
   "version": "1.0.0",
   "private": true,
+  "homepage": "https://www.xhseasy.top/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/g0dam/xhseasy.git"
+  },
+  "bugs": {
+    "url": "https://github.com/g0dam/xhseasy/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=18.0.0"
