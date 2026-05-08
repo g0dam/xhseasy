@@ -81,7 +81,6 @@ const SNAPSHOT_STYLE_PROPS = [
   "white-space",
   "word-break",
   "overflow-wrap",
-  "text-wrap",
   "flex",
   "flex-basis",
   "flex-direction",
@@ -119,9 +118,15 @@ type NodeStyleSnapshot = {
   styles: Record<string, string>;
 };
 
+type TextLineSnapshot = {
+  id: string;
+  lines: string[];
+};
+
 type CaptureSnapshot = {
   captureId: string;
   nodes: NodeStyleSnapshot[];
+  textLines: TextLineSnapshot[];
   restore: () => void;
 };
 
@@ -190,6 +195,55 @@ function snapshotComputedStyle(el: HTMLElement): Record<string, string> {
   return styles;
 }
 
+function collectTextNodes(root: Node): Text[] {
+  const nodes: Text[] = [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node = walker.nextNode();
+  while (node) {
+    if (node.textContent) nodes.push(node as Text);
+    node = walker.nextNode();
+  }
+  return nodes;
+}
+
+function measureRenderedTextLines(el: HTMLElement): string[] {
+  const textNodes = collectTextNodes(el);
+  const pieces: Array<{ text: string; top: number }> = [];
+
+  textNodes.forEach((node) => {
+    const text = node.textContent ?? "";
+    for (let i = 0; i < text.length; i += 1) {
+      const range = document.createRange();
+      range.setStart(node, i);
+      range.setEnd(node, i + 1);
+      const rect = range.getBoundingClientRect();
+      range.detach();
+      if (rect.width === 0 && rect.height === 0) continue;
+      pieces.push({ text: text[i], top: rect.top });
+    }
+  });
+
+  if (pieces.length === 0) {
+    const fallback = el.textContent?.trim() ?? "";
+    return fallback ? [fallback] : [];
+  }
+
+  const lines: Array<{ top: number; text: string }> = [];
+  pieces.forEach((piece) => {
+    const line = lines.find((candidate) => Math.abs(candidate.top - piece.top) < 3);
+    if (line) {
+      line.text += piece.text;
+    } else {
+      lines.push({ top: piece.top, text: piece.text });
+    }
+  });
+
+  return lines
+    .sort((a, b) => a.top - b.top)
+    .map((line) => line.text.trim())
+    .filter(Boolean);
+}
+
 function createCaptureSnapshot(el: HTMLElement): CaptureSnapshot {
   const id = `xhs-export-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const previousCapture = el.getAttribute(EXPORT_CAPTURE_ATTR);
@@ -197,12 +251,13 @@ function createCaptureSnapshot(el: HTMLElement): CaptureSnapshot {
     el,
     ...Array.from(
       el.querySelectorAll<HTMLElement>(
-        ".note-content,.note-meta,.note-body,.note-flow-block,.note-flow-inline,.note-flow-inline-wrap,.note-flow-paragraph-break,.xhs-page-template"
+        ".note-content,.note-meta,.note-body,.note-flow-block,.note-flow-inline,.note-flow-inline-wrap,.note-flow-paragraph-break,.note-body h1,.note-body h2,.note-body h3,.xhs-page-template"
       )
     ),
   ];
   const previousNodeIds = new Map<HTMLElement, string | null>();
   const snapshots: NodeStyleSnapshot[] = [];
+  const textLines: TextLineSnapshot[] = [];
 
   el.setAttribute(EXPORT_CAPTURE_ATTR, id);
   nodes.forEach((node, index) => {
@@ -210,11 +265,15 @@ function createCaptureSnapshot(el: HTMLElement): CaptureSnapshot {
     previousNodeIds.set(node, node.getAttribute(EXPORT_NODE_ATTR));
     node.setAttribute(EXPORT_NODE_ATTR, nodeId);
     snapshots.push({ id: nodeId, styles: snapshotComputedStyle(node) });
+    if (node.matches(".note-body h1, .note-body h2, .note-body h3")) {
+      textLines.push({ id: nodeId, lines: measureRenderedTextLines(node) });
+    }
   });
 
   return {
     captureId: id,
     nodes: snapshots,
+    textLines,
     restore: () => {
       if (previousCapture == null) {
         el.removeAttribute(EXPORT_CAPTURE_ATTR);
@@ -241,6 +300,25 @@ function applyCaptureSnapshot(clonedDoc: Document, snapshot: CaptureSnapshot): v
     Object.entries(styles).forEach(([prop, value]) => {
       cloned.style.setProperty(prop, value);
     });
+  });
+}
+
+function applyMeasuredTextLines(clonedDoc: Document, snapshot: CaptureSnapshot): void {
+  snapshot.textLines.forEach(({ id, lines }) => {
+    if (lines.length <= 1) return;
+    const cloned = clonedDoc.querySelector<HTMLElement>(`[${EXPORT_NODE_ATTR}="${id}"]`);
+    if (!cloned) return;
+
+    cloned.replaceChildren(
+      ...lines.map((line) => {
+        const span = clonedDoc.createElement("span");
+        span.textContent = line;
+        span.style.display = "block";
+        span.style.whiteSpace = "nowrap";
+        span.style.lineHeight = "inherit";
+        return span;
+      })
+    );
   });
 }
 
@@ -303,9 +381,7 @@ async function capturePage(
   const boxShadow = resolvePageBoxShadow(el);
   const captureTarget = createCaptureSnapshot(el);
 
-  let canvas: HTMLCanvasElement;
-  try {
-    canvas = await html2canvas(el, {
+  const captureOptions = {
       scale,
       width: W,
       height: H,
@@ -318,6 +394,7 @@ async function capturePage(
         copyRootCssVariables(clonedDoc);
         clonedDoc.documentElement.style.setProperty("--note-font-family", zhStack);
         applyCaptureSnapshot(clonedDoc, captureTarget);
+        applyMeasuredTextLines(clonedDoc, captureTarget);
 
         const clonedRoot = clonedDoc.querySelector<HTMLElement>(
           `[${EXPORT_CAPTURE_ATTR}="${captureTarget.captureId}"]`
@@ -349,7 +426,11 @@ async function capturePage(
           n.style.flexShrink = "0";
         });
       },
-    });
+    };
+
+  let canvas: HTMLCanvasElement;
+  try {
+    canvas = await html2canvas(el, captureOptions);
   } finally {
     captureTarget.restore();
   }
