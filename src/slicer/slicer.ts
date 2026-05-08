@@ -193,7 +193,14 @@ function snapshotComputedStyle(el: HTMLElement): Record<string, string> {
 function createCaptureSnapshot(el: HTMLElement): CaptureSnapshot {
   const id = `xhs-export-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const previousCapture = el.getAttribute(EXPORT_CAPTURE_ATTR);
-  const nodes = [el];
+  const nodes = [
+    el,
+    ...Array.from(
+      el.querySelectorAll<HTMLElement>(
+        ".note-content,.note-meta,.note-body,.note-flow-block,.note-flow-inline,.note-flow-inline-wrap,.note-flow-paragraph-break,.xhs-page-template"
+      )
+    ),
+  ];
   const previousNodeIds = new Map<HTMLElement, string | null>();
   const snapshots: NodeStyleSnapshot[] = [];
 
@@ -234,55 +241,6 @@ function applyCaptureSnapshot(clonedDoc: Document, snapshot: CaptureSnapshot): v
     Object.entries(styles).forEach(([prop, value]) => {
       cloned.style.setProperty(prop, value);
     });
-  });
-}
-
-function stabilizeTextForCanvas(clonedDoc: Document): void {
-  const walker = clonedDoc.createTreeWalker(
-    clonedDoc.body,
-    NodeFilter.SHOW_TEXT,
-    {
-      acceptNode: (node) => {
-        const parent = node.parentElement;
-        if (!parent) return NodeFilter.FILTER_REJECT;
-        if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
-        if (!parent.closest(".note-body, .xhs-page-template")) return NodeFilter.FILTER_REJECT;
-        if (parent.closest("code, pre, script, style, textarea")) return NodeFilter.FILTER_REJECT;
-        return NodeFilter.FILTER_ACCEPT;
-      },
-    }
-  );
-
-  const textNodes: Text[] = [];
-  let current = walker.nextNode();
-  while (current) {
-    textNodes.push(current as Text);
-    current = walker.nextNode();
-  }
-
-  const segmentPattern = /([\u3400-\u9fff\u3000-\u303f\uff00-\uffef])|([A-Za-z0-9_./:+#-]+)|(\s+)|([^\s])/g;
-  textNodes.forEach((node) => {
-    const source = node.nodeValue ?? "";
-    const fragment = clonedDoc.createDocumentFragment();
-    const parts = source.match(segmentPattern) ?? [source];
-
-    parts.forEach((part) => {
-      if (/^\s+$/.test(part)) {
-        fragment.appendChild(clonedDoc.createTextNode(part));
-        return;
-      }
-
-      const span = clonedDoc.createElement("span");
-      span.textContent = part;
-      span.style.display = "inline-block";
-      span.style.whiteSpace = "pre";
-      span.style.letterSpacing = "normal";
-      span.style.fontKerning = "none";
-      span.style.maxWidth = "100%";
-      fragment.appendChild(span);
-    });
-
-    node.parentNode?.replaceChild(fragment, node);
   });
 }
 
@@ -381,16 +339,6 @@ async function capturePage(
           n.style.fontFamily = zhStack;
         });
 
-        clonedDoc.querySelectorAll<HTMLElement>(
-          ".note-body,.note-body *,.xhs-page-template,.xhs-page-template *"
-        ).forEach((n) => {
-          n.style.letterSpacing = "normal";
-          n.style.fontKerning = "none";
-          n.style.overflowWrap = "break-word";
-          n.style.wordBreak = "normal";
-        });
-        stabilizeTextForCanvas(clonedDoc);
-
         clonedDoc.querySelectorAll<HTMLElement>(".note-meta, .note-meta span").forEach((n) => {
           n.style.whiteSpace = "nowrap";
         });
@@ -450,15 +398,30 @@ function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   });
 }
 
+function yieldToBrowser(delay = 24): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, delay));
+}
+
+function releaseCanvas(canvas: HTMLCanvasElement): void {
+  canvas.width = 1;
+  canvas.height = 1;
+}
+
+async function downloadCanvas(canvas: HTMLCanvasElement, index: number): Promise<void> {
+  const blob = await canvasToBlob(canvas);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `xhs-note-${String(index + 1).padStart(3, "0")}.png`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+
 export async function downloadSlices(pages: SlicePage[]): Promise<void> {
   for (const [idx, page] of pages.entries()) {
-    const blob = await canvasToBlob(page.canvas);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `xhs-note-${String(idx + 1).padStart(3, "0")}.png`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    await downloadCanvas(page.canvas, idx);
+    releaseCanvas(page.canvas);
+    await yieldToBrowser(18);
   }
 }
 
@@ -467,7 +430,21 @@ export async function exportAndDownload(
   theme: ThemeConfig,
   options?: Partial<ExportOptions>
 ): Promise<number> {
-  const { pages } = await exportToPng(rootEl, theme, options);
-  await downloadSlices(pages);
-  return pages.length;
+  const scale = options?.scale ?? DEFAULT_SCALE;
+
+  if (!html2canvas) throw new Error("html2canvas 未加载，请刷新页面。");
+
+  const exportPages = Array.from(rootEl.querySelectorAll<HTMLElement>("[data-export-page='true']"));
+  const total = exportPages.length;
+
+  for (const [idx, pageEl] of exportPages.entries()) {
+    options?.onProgress?.(idx + 1, total);
+    await yieldToBrowser();
+    const { canvas } = await capturePage(pageEl, theme, scale);
+    await downloadCanvas(canvas, idx);
+    releaseCanvas(canvas);
+    await yieldToBrowser();
+  }
+
+  return total;
 }

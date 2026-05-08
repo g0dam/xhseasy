@@ -68,6 +68,15 @@ export function parseMarkdown(md: string): string {
   });
 }
 
+export function parseInlineMarkdown(md: string): string {
+  const raw = marked.parseInline(normalizeXhsInline(md), { async: false }) as string;
+  return DOMPurify.sanitize(raw, {
+    USE_PROFILES: { html: true },
+    ADD_TAGS: ["span"],
+    ADD_ATTR: ["class", "style"],
+  });
+}
+
 // ============================================================
 // 渲染结果：包含原始块信息，用于切片决策
 // ============================================================

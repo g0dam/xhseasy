@@ -10,7 +10,7 @@ import {
   removeImageBlockFromDocument,
   updateImageBlockInDocument,
 } from "@/document/markdown";
-import type { VisualBlock, VisualDocument } from "@/document/types";
+import type { VisualBlock, VisualDocument, VisualTextBlock } from "@/document/types";
 import type { DecorationConfig } from "@/templates/index";
 import { FlowBody } from "./FlowBody";
 import { PageTemplateRenderer } from "./PageTemplateRenderer";
@@ -50,8 +50,122 @@ function getPageChromeHeight(settings: EditorSettings): number {
   return settings.topLineHeight + 18 + settings.blockPadBottom;
 }
 
+function getVisibleTextForEstimate(text: string): string {
+  return text
+    .replace(/<\/?xhs\b[^>]*>/gi, "")
+    .replace(/<\/?span\b[^>]*>/gi, "")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/~~([^~]+)~~/g, "$1");
+}
+
+function estimateTextUnits(text: string): number {
+  let units = 0;
+  for (const char of getVisibleTextForEstimate(text)) {
+    if (/\s/.test(char)) {
+      units += 0.32;
+    } else if (/[\u3400-\u9fff\u3000-\u303f\uff00-\uffef]/.test(char)) {
+      units += 1;
+    } else if (/[A-Z]/.test(char)) {
+      units += 0.68;
+    } else if (/[a-z0-9]/.test(char)) {
+      units += 0.56;
+    } else {
+      units += 0.72;
+    }
+  }
+  return units;
+}
+
+function estimateTextLineCount(text: string, settings: EditorSettings): number {
+  const unitsPerLine = Math.max(8, getBodyContentWidth(settings) / Math.max(1, settings.fontSize));
+  return Math.max(1, Math.ceil(estimateTextUnits(text) / unitsPerLine));
+}
+
+function isSplittableParagraphMarkdown(markdown: string): boolean {
+  const text = markdown.trim();
+  if (!text) return false;
+  if (text.includes("\n")) return false;
+  if (/^(#{1,6}\s|>\s?|```|\s*[-*+]\s+|\s*\d+[.)]\s+|\s*[-*_]{3,}\s*$)/.test(text)) {
+    return false;
+  }
+  const withoutSupportedInlineTags = text
+    .replace(/<\/?xhs\b[^>]*>/gi, "")
+    .replace(/<\/?span\b[^>]*>/gi, "");
+  return !/[`[\]{}<>]/.test(withoutSupportedInlineTags);
+}
+
+function splitSentencePieces(text: string): string[] {
+  const pieces = text.match(/[^。！？；.!?;]+[。！？；.!?;]?\s*/g) ?? [text];
+  return pieces.filter((piece) => piece.trim().length > 0);
+}
+
+function splitLongPieceByUnits(piece: string, maxUnits: number): string[] {
+  const chunks: string[] = [];
+  let current = "";
+  let currentUnits = 0;
+
+  for (const char of piece) {
+    const unit = estimateTextUnits(char);
+    if (current && currentUnits + unit > maxUnits) {
+      chunks.push(current);
+      current = char;
+      currentUnits = unit;
+    } else {
+      current += char;
+      currentUnits += unit;
+    }
+  }
+
+  if (current) chunks.push(current);
+  return chunks;
+}
+
+function splitParagraphIntoInlineFragments(
+  block: VisualTextBlock,
+  targetHeight: number,
+  settings: EditorSettings
+): VisualTextBlock[] {
+  if (!isSplittableParagraphMarkdown(block.markdown)) return [block];
+  if (estimateBlockHeightFallback(block, settings) <= targetHeight) return [block];
+
+  const targetLines = 1;
+  const unitsPerLine = Math.max(8, getBodyContentWidth(settings) / Math.max(1, settings.fontSize));
+  const maxUnits = Math.max(10, unitsPerLine * targetLines * 0.92);
+  const sentencePieces = splitSentencePieces(block.markdown.trim());
+  const pieces = sentencePieces.flatMap((piece) =>
+    estimateTextUnits(piece) > maxUnits && !/<\/?[^>]+>/.test(piece)
+      ? splitLongPieceByUnits(piece, maxUnits)
+      : [piece]
+  );
+
+  const fragments: string[] = [];
+  let current = "";
+
+  pieces.forEach((piece) => {
+    const next = current + piece;
+    if (current && estimateTextUnits(next) > maxUnits) {
+      fragments.push(current);
+      current = piece;
+    } else {
+      current = next;
+    }
+  });
+  if (current) fragments.push(current);
+
+  if (fragments.length <= 1) return [block];
+
+  return fragments.map((markdown, index) => ({
+    ...block,
+    id: `${block.id}-inline-${index}`,
+    markdown,
+    flow: "inline",
+    paragraphEnd: index === fragments.length - 1,
+  }));
+}
+
 function splitOversizedTextBlock(
-  block: Extract<VisualBlock, { type: "text" }>,
+  block: VisualTextBlock,
   maxHeight: number,
   settings: EditorSettings
 ): VisualBlock[] {
@@ -122,11 +236,17 @@ function prepareBodyBlocksForPagination(
   settings: EditorSettings
 ): VisualBlock[] {
   const maxTextHeight = Math.max(180, (pageHeight - getPageChromeHeight(settings) - 76) * 0.86);
+  const paragraphTargetHeight = settings.fontSize * settings.lineHeight * 1.35;
   return blocks
     .filter(blockHasRenderableContent)
     .flatMap((block) =>
       block.type === "text"
-        ? splitOversizedTextBlock(block, maxTextHeight, settings)
+        ? splitParagraphIntoInlineFragments(block, paragraphTargetHeight, settings)
+            .flatMap((fragment) =>
+              fragment.flow === "inline"
+                ? [fragment]
+                : splitOversizedTextBlock(fragment, maxTextHeight, settings)
+            )
         : [block]
     );
 }
@@ -146,6 +266,7 @@ function sliceBlocksIntoPagesByMeasuredHeight(
   if (meaningful.length === 0) return [];
 
   const chromeH = getPageChromeHeight(settings);
+  const bottomGuard = Math.max(0, settings.pageBottomSafeArea ?? 8);
   const usableForPage = (pageIndex: number) =>
     Math.max(
       140,
@@ -154,7 +275,7 @@ function sliceBlocksIntoPagesByMeasuredHeight(
         (pageIndex === 0 && hasMetaOnFirstPage && settings.showNoteMeta !== false
           ? metaHeight
           : 0) -
-        10
+        bottomGuard
     );
 
   const pages: VisualBlock[][] = [];
@@ -163,10 +284,13 @@ function sliceBlocksIntoPagesByMeasuredHeight(
 
   meaningful.forEach((block) => {
     const usableH = usableForPage(pages.length);
-    const blockH = Math.max(
+    let blockH = Math.max(
       1,
       Math.ceil(blockHeights[block.id] ?? estimateBlockHeightFallback(block, settings))
     );
+    if (current.length === 0 && block.type === "text" && block.flow === "inline") {
+      blockH = Math.max(blockH, Math.ceil(settings.fontSize * settings.lineHeight));
+    }
 
     if (current.length > 0 && currentH + blockH > usableH) {
       pages.push([...current]);
@@ -205,11 +329,12 @@ function estimateBlockHeightFallback(block: VisualBlock, settings: EditorSetting
       26 + codeLines * (fontSize * 0.88 * 1.56) + fontSize * settings.preMargin * 0.7
     );
   }
-  const avgCharWidth = fontSize * 0.56;
-  const contentWidth = getBodyContentWidth(settings);
-  const charsPerLine = Math.max(1, Math.floor(contentWidth / avgCharWidth));
-  const lines = Math.max(1, Math.ceil(text.length / charsPerLine));
-  return Math.round(lines * fontSize * lineHeight * 1.14 + settings.fontSize * 1.2);
+  const lines = estimateTextLineCount(text, settings);
+  const paragraphGap = block.paragraphEnd ? settings.fontSize * settings.pMarginBottom : 0;
+  if (block.flow === "inline") {
+    return Math.round(lines * fontSize * lineHeight * 1.04 + paragraphGap);
+  }
+  return Math.round(lines * fontSize * lineHeight * 1.1 + settings.fontSize * settings.pMarginBottom);
 }
 
 /**
@@ -248,6 +373,7 @@ function buildMeasurementKey(
     settings.letterSpacing,
     settings.blockPadX,
     settings.blockPadBottom,
+    settings.pageBottomSafeArea ?? 8,
     settings.contentInsetX,
     settings.showNoteMeta,
     settings.noteMetaPosition,
@@ -430,10 +556,35 @@ export function NotePreviewCard({
     let frame = 0;
     const readMeasurements = () => {
       const nextHeights: Record<string, number> = {};
+      const body = root.querySelector<HTMLElement>(".note-body--flow");
+      const bodyTop = body?.getBoundingClientRect().top ?? root.getBoundingClientRect().top;
+      let measuredBottom = 0;
       root.querySelectorAll<HTMLElement>("[data-flow-block-id]").forEach((node) => {
         const id = node.dataset.flowBlockId;
         if (!id) return;
-        nextHeights[id] = Math.max(1, Math.ceil(node.getBoundingClientRect().height));
+        const rects = Array.from(node.getClientRects()).filter(
+          (rect) => rect.width > 0 || rect.height > 0
+        );
+        const nodeRect = node.getBoundingClientRect();
+        const paragraphBreak = node.dataset.flowParagraphEnd === "true"
+          ? node.nextElementSibling
+          : null;
+        const paragraphBreakRect = paragraphBreak instanceof HTMLElement &&
+          paragraphBreak.dataset.flowParagraphBreakFor === id
+          ? paragraphBreak.getBoundingClientRect()
+          : null;
+        const nodeBottom = Math.max(
+          nodeRect.bottom,
+          ...rects.map((rect) => rect.bottom),
+          paragraphBreakRect?.bottom ?? Number.NEGATIVE_INFINITY
+        ) - bodyTop;
+        const contribution = Math.max(0, nodeBottom - measuredBottom);
+        const lineFloor =
+          node.dataset.flowInline === "true" && contribution === 0
+            ? 1
+            : 0;
+        nextHeights[id] = Math.max(lineFloor, Math.ceil(contribution));
+        measuredBottom = Math.max(measuredBottom, nodeBottom);
       });
 
       const meta = root.querySelector<HTMLElement>("[data-measure-note-meta]");

@@ -15,7 +15,7 @@ import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent a
 import type { EditorSettings, ThemeConfig } from "@/types";
 import { ACTIVE_DECOR_KEY, defaultSettings, loadStoredSettings, persistSettings } from "@/store/store";
 import { expandPbnImages, collapseDataImagesToPlaceholders } from "@/markdown/pbnImages";
-import { exportToPng, downloadSlices } from "@/slicer/slicer";
+import { exportAndDownload } from "@/slicer/slicer";
 import { TemplateGallery } from "@/components/TemplateGallery";
 import { NotePreviewCard } from "@/components/NotePreviewCard";
 import { ComponentSidebar } from "@/components/ComponentSidebar";
@@ -702,12 +702,14 @@ export function App() {
     try {
       await new Promise((r) => setTimeout(r, 120));
       await document.fonts.ready;
-      const { pages } = await exportToPng(el, settings as unknown as ThemeConfig, {
+      const total = await exportAndDownload(el, settings as unknown as ThemeConfig, {
         scale: 2,
         aspectRatio: settings.aspectRatio,
+        onProgress: (current, totalPages) => {
+          setLiveText(`正在导出 ${current}/${totalPages}...`);
+        },
       });
-      await downloadSlices(pages);
-      setLiveText(`已导出 ${pages.length} 张图片`);
+      setLiveText(`已导出 ${total} 张图片`);
       setLiveError(false);
       setTimeout(() => setLiveText(""), 5000);
     } catch (err) {

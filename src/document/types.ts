@@ -5,6 +5,8 @@ export type VisualTextBlock = {
   id: string;
   type: "text";
   markdown: string;
+  flow?: "block" | "inline";
+  paragraphEnd?: boolean;
 };
 
 export type VisualImageBlock = {

@@ -20,6 +20,7 @@ export function SettingsPanel({ settings, onUpdate, onReset, open, onClose }: Se
 
   const hasBackgroundImage = settings.backgroundImageSrc.trim().length > 0;
   const showBackgroundEffects = settings.backgroundMode === "image" && hasBackgroundImage;
+  const bottomSafeArea = settings.pageBottomSafeArea ?? defaultSettings().pageBottomSafeArea;
 
   return (
     <>
@@ -88,6 +89,20 @@ export function SettingsPanel({ settings, onUpdate, onReset, open, onClose }: Se
               <div className="range-with-val">
                 <input type="range" min="0" max="40" step="1" value={settings.contentInsetX} onChange={(e) => onUpdate({ contentInsetX: Number(e.target.value) })} />
                 <span>{settings.contentInsetX}px</span>
+              </div>
+            </div>
+            <div className="settings-row">
+              <label>页面底部留白</label>
+              <div className="range-with-val">
+                <input type="range" min="12" max="72" step="1" value={settings.blockPadBottom} onChange={(e) => onUpdate({ blockPadBottom: Number(e.target.value) })} />
+                <span>{settings.blockPadBottom}px</span>
+              </div>
+            </div>
+            <div className="settings-row">
+              <label>防裁切安全区</label>
+              <div className="range-with-val">
+                <input type="range" min="0" max="28" step="1" value={bottomSafeArea} onChange={(e) => onUpdate({ pageBottomSafeArea: Number(e.target.value) })} />
+                <span>{bottomSafeArea}px</span>
               </div>
             </div>
           </div>

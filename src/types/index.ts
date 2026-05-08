@@ -34,6 +34,7 @@ export interface ThemeSpacing {
   blockPadX: number;
   blockPadY: number;
   blockPadBottom: number;
+  pageBottomSafeArea: number;
   metaMarginBottom: number;
   pMarginBottom: number;
   h2MarginTop: number;
@@ -179,6 +180,7 @@ export interface ExportOptions {
   scale: number;           // 导出分辨率倍率（默认2）
   aspectRatio: "3:4" | "3:5" | "4:5" | "1:1" | "auto";
   includeMeta: boolean;
+  onProgress?: (current: number, total: number) => void;
 }
 
 // ============================================================

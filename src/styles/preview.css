@@ -101,6 +101,27 @@
   box-sizing: border-box;
 }
 
+.note-body--flow .note-flow-block--inline-text {
+  display: inline;
+  width: auto;
+  max-width: none;
+  min-width: 0;
+}
+
+.note-body--flow .note-flow-inline-wrap {
+  display: inline;
+}
+
+.note-body--flow .note-flow-inline {
+  display: inline;
+}
+
+.note-body--flow .note-flow-paragraph-break {
+  display: block;
+  height: var(--note-p-margin-bottom);
+  min-height: 0;
+}
+
 .note-body--flow .note-flow-block,
 .note-body--flow .note-flow-block * {
   max-width: 100%;
