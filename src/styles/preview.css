@@ -1358,6 +1358,20 @@ input[type="date"].settings-input { cursor: pointer; }
   z-index: 10;
 }
 
+.note-page-number {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  z-index: 12;
+  pointer-events: none;
+  color: var(--card-muted);
+  font-family: var(--note-font-family);
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 600;
+  opacity: 0.58;
+}
+
 /* ── Layer 1: 内容区 ─────────────────────────────── */
 /* 所有内容的容器，负责 safe padding，z-index 保护交互 */
 .note-content {

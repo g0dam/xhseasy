@@ -376,6 +376,7 @@ function buildMeasurementKey(
     settings.pageBottomSafeArea ?? 8,
     settings.contentInsetX,
     settings.showNoteMeta,
+    settings.showPageNumber,
     settings.noteMetaPosition,
     settings.noteMetaAlign,
   ].join(":");
@@ -643,7 +644,6 @@ export function NotePreviewCard({
     onPageCountChange?.(Math.max(1, previewPages.length));
   }, [onPageCountChange, previewPages.length]);
 
-  const bodyPageCount = previewPages.filter(p => p.kind === "body").length;
   const activeAdvancedVariant = decorations?.advancedDecor?.enabled
     ? decorations.advancedDecor.variant
     : undefined;
@@ -1534,7 +1534,7 @@ export function NotePreviewCard({
                 className={`xhs-export-page-card note-block--template${page.isFirstPage ? " note-block--first" : ""}`}
                 data-export-page="true"
                 data-export-page-type="template"
-                data-page-label={`${pageIdx + 1}/${previewPages.length}`}
+                data-page-label={`${pageIdx + 1}`}
                 data-is-first-page={page.isFirstPage ? "true" : "false"}
                 data-advanced-template={activeAdvancedVariant}
                 style={{ height: pageHeight, position: "relative" }}
@@ -1548,6 +1548,7 @@ export function NotePreviewCard({
                 </div>
                 {/* Layer 2: 装饰层 */}
                 {decor && <div className="note-decor-layer">{decor}</div>}
+                {settings.showPageNumber ? <div className="note-page-number" aria-hidden="true">{pageIdx + 1}</div> : null}
               </article>
             );
           }
@@ -1557,7 +1558,7 @@ export function NotePreviewCard({
               className={`xhs-export-page-card note-block--body${!showMeta ? " note-block--continuation" : ""}${!showMeta && settings.noteMetaPosition === "bottom" ? " note-block--meta-bottom" : ""}`}
               data-export-page="true"
               data-export-page-type="body"
-              data-page-label={`${page.ordinal + 1}/${bodyPageCount}`}
+              data-page-label={`${pageIdx + 1}`}
               data-is-first-page={page.isFirstPage ? "true" : "false"}
               data-advanced-template={activeAdvancedVariant}
               style={{ height: pageHeight, position: "relative" }}
@@ -1580,6 +1581,7 @@ export function NotePreviewCard({
               </div>
               {/* Layer 2: 装饰层 — 独立 Absolute 层，所有装饰都在这里，pointer-events:none */}
               {decor && <div className="note-decor-layer">{decor}</div>}
+              {settings.showPageNumber ? <div className="note-page-number" aria-hidden="true">{pageIdx + 1}</div> : null}
             </article>
           );
         })}

@@ -29,6 +29,7 @@ export function defaultSettings(): EditorSettings {
     exportCardWidth: 405,
     aspectRatio: "3:4",
     showNoteMeta: true,
+    showPageNumber: false,
     noteMetaPosition: "top",
     noteMetaAlign: "left",
     noteMetaPadLeft: 0,

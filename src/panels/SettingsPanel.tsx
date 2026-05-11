@@ -243,6 +243,7 @@ export function SettingsPanel({ settings, onUpdate, onReset, open, onClose }: Se
               )}
             </div>
             <div className="settings-row"><label>显示笔记顶栏</label><input type="checkbox" checked={settings.showNoteMeta} onChange={(e) => onUpdate({ showNoteMeta: e.target.checked })} /></div>
+            <div className="settings-row"><label>显示底部序号</label><input type="checkbox" checked={settings.showPageNumber ?? false} onChange={(e) => onUpdate({ showPageNumber: e.target.checked })} /></div>
             <div className="settings-row">
               <label>导出比例</label>
               <select value={settings.aspectRatio} onChange={(e) => onUpdate({ aspectRatio: e.target.value as EditorSettings["aspectRatio"] })}>

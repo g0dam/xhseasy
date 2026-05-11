@@ -128,6 +128,7 @@ export interface EditorSettings extends ThemeColors, ThemeTypography, ThemeSpaci
   exportCardWidth: number;  // 导出宽度 px
   aspectRatio: AspectRatio;  // 导出比例
   showNoteMeta: boolean;
+  showPageNumber: boolean;
   noteMetaPosition: NoteMetaPosition;
   noteMetaAlign: NoteMetaAlign;
   /** 顶栏左侧内边距（px） */

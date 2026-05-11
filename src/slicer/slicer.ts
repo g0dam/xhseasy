@@ -251,7 +251,7 @@ function createCaptureSnapshot(el: HTMLElement): CaptureSnapshot {
     el,
     ...Array.from(
       el.querySelectorAll<HTMLElement>(
-        ".note-content,.note-meta,.note-body,.note-flow-block,.note-flow-inline,.note-flow-inline-wrap,.note-flow-paragraph-break,.note-body h1,.note-body h2,.note-body h3,.xhs-page-template"
+        ".note-content,.note-meta,.note-body,.note-flow-block,.note-flow-inline,.note-flow-inline-wrap,.note-flow-paragraph-break,.note-body h1,.note-body h2,.note-body h3,.note-page-number,.xhs-page-template"
       )
     ),
   ];
