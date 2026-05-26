@@ -657,11 +657,8 @@
   border-radius: 14px;
   margin: var(--note-img-margin) 0;
   display: block;
-  border: 1px solid rgba(80,56,31,0.08);
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.75) inset,
-    0 10px 24px rgba(77,55,29,0.14),
-    0 2px 6px rgba(77,55,29,0.08);
+  border: none;
+  box-shadow: none;
   object-fit: cover;
 }
 .note-body a { color: var(--accent); text-decoration: none; }
@@ -1330,6 +1327,9 @@ input[type="date"].settings-input { cursor: pointer; }
   margin-bottom: 0;
   max-width: 100%;
   box-sizing: border-box;
+  border: none;
+  box-shadow: none;
+  background: transparent;
 }
 
 .xhs-preview-image-shift {
@@ -1338,24 +1338,15 @@ input[type="date"].settings-input { cursor: pointer; }
 
 .xhs-image-figure {
   position: relative;
-  padding: 4px;
-  border-radius: 14px;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.9), rgba(248,241,231,0.86));
-  border: 1px solid rgba(99,74,40,0.07);
-  box-shadow:
-    0 10px 20px rgba(82,61,35,0.10),
-    0 2px 6px rgba(82,61,35,0.05),
-    inset 0 1px 0 rgba(255,255,255,0.82);
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .xhs-image-figure::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: linear-gradient(180deg, rgba(255,255,255,0.24), rgba(255,255,255,0) 28%);
+  display: none;
 }
 
 /* 图片包装器（用于可视化编辑） */

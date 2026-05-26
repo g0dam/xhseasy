@@ -249,6 +249,7 @@ export function SettingsPanel({ settings, onUpdate, onReset, open, onClose }: Se
               <select value={settings.aspectRatio} onChange={(e) => onUpdate({ aspectRatio: e.target.value as EditorSettings["aspectRatio"] })}>
                 <option value="3:4">3:4 常规图文</option>
                 <option value="3:5">3:5 竖版长图</option>
+                <option value="9:16">9:16 全屏图</option>
               </select>
             </div>
             <div className="settings-row">

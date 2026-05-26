@@ -9,7 +9,7 @@ export type NoteMetaPosition = "top" | "bottom";
 export type NoteMetaAlign = "left" | "center";
 export type TemplateSurfaceStyle = "blend" | "paper" | "outline";
 export type ContentDensity = "compact" | "balanced";
-export type AspectRatio = "3:4" | "3:5";
+export type AspectRatio = "3:4" | "3:5" | "9:16";
 
 export interface ThemeColors {
   cardBg: string;      // 卡片背景
@@ -179,7 +179,7 @@ export interface SliceBoundary {
 
 export interface ExportOptions {
   scale: number;           // 导出分辨率倍率（默认2）
-  aspectRatio: "3:4" | "3:5" | "4:5" | "1:1" | "auto";
+  aspectRatio: AspectRatio | "4:5" | "1:1" | "auto";
   includeMeta: boolean;
   onProgress?: (current: number, total: number) => void;
 }

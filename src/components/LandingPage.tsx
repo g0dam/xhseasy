@@ -51,7 +51,7 @@ const SCENARIOS = [
   {
     title: "写完文章后，直接进入排版",
     solution: "把 Markdown 文稿粘贴进编辑器，选择模板后就能看到竖版长图效果。",
-    proof: "工具支持 3:4 和 3:5 这类常用比例，适合把一篇内容拆成多张连续图片发布。",
+    proof: "工具支持 3:4、3:5 和 9:16 这类常用比例，适合把一篇内容拆成多张连续图片发布。",
   },
   {
     title: "让每篇笔记保持相近的视觉风格",
@@ -94,7 +94,7 @@ const FAQS = [
 
 const WORKFLOW = [
   ["1", "写作", "在 Markdown 编辑器中专注写作你的内容。"],
-  ["2", "预览", "实时预览 3:4 / 3:5 卡片效果，所见即所得。"],
+  ["2", "预览", "实时预览 3:4 / 3:5 / 9:16 卡片效果，所见即所得。"],
   ["3", "调整", "切换主题、调整样式，打磨你喜欢的版式。"],
   ["4", "导出", "智能切片并导出高清 PNG，发布小红书更轻松。"],
 ];
@@ -188,8 +188,8 @@ function HeroPreview() {
         </section>
         <section className="landing-preview-mock">
           <div className="landing-panel-title">
-            <span>预览（3:4 / 3:5）</span>
-            <span className="landing-ratio">3:5</span>
+            <span>预览（3:4 / 3:5 / 9:16）</span>
+            <span className="landing-ratio">9:16</span>
           </div>
           <article className="landing-note-card">
             <h2>生活是自己的</h2>

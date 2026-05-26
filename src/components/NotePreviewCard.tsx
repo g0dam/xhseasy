@@ -16,7 +16,15 @@ import { FlowBody } from "./FlowBody";
 import { PageTemplateRenderer } from "./PageTemplateRenderer";
 
 export function aspectRatioValue(ratio: AspectRatio): number {
-  return ratio === "3:5" ? 5 / 3 : 4 / 3;
+  if (ratio === "9:16") return 16 / 9;
+  if (ratio === "3:5") return 5 / 3;
+  return 4 / 3;
+}
+
+function aspectRatioCssValue(ratio: AspectRatio): string {
+  if (ratio === "9:16") return "9/16";
+  if (ratio === "3:5") return "3/5";
+  return "3/4";
 }
 
 function calcPageHeight(cardWidth: number, ratio: AspectRatio): number {
@@ -464,7 +472,7 @@ export function NotePreviewCard({
     const vars = buildCssVars(settings as unknown as ThemeConfig);
     Object.entries(vars).forEach(([k, v]) => root.style.setProperty(k, v));
     root.style.setProperty("--note-card-w", `${settings.exportCardWidth}px`);
-    root.style.setProperty("--note-card-ratio", settings.aspectRatio === "3:5" ? "3/5" : "3/4");
+    root.style.setProperty("--note-card-ratio", aspectRatioCssValue(settings.aspectRatio));
     root.style.setProperty("--note-meta-pad-left", `${settings.noteMetaPadLeft}px`);
     root.style.setProperty("--note-meta-pad-right", `${settings.noteMetaPadRight}px`);
     root.style.setProperty("--stage-bg", settings.backgroundMode === "image" ? "transparent" : settings.bodyBg);

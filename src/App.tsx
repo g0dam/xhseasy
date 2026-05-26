@@ -817,7 +817,7 @@ export function App() {
           />
 
           <div className="aspect-ratio-switcher" aria-label="导出比例">
-            {(["3:4", "3:5"] as const).map((ratio) => (
+            {(["3:4", "3:5", "9:16"] as const).map((ratio) => (
               <button
                 key={ratio}
                 type="button"
