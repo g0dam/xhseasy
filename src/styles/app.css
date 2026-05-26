@@ -1228,6 +1228,18 @@ body:has(.landing-page) {
   align-self: center;
 }
 
+.toolbar-status:empty {
+  display: none;
+}
+
+.mobile-panel-switcher {
+  display: none;
+}
+
+.desktop-only-action {
+  display: inline-flex;
+}
+
 .toolbar button {
   padding: 7px 12px;
   border-radius: 12px;

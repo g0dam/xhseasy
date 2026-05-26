@@ -207,6 +207,7 @@
   display: block;
   width: 100%;
   min-height: 0;
+  box-sizing: border-box;
   font-family: ui-monospace,"Cascadia Code",Consolas,monospace;
   font-size: 13px;
   line-height: 1.78;
@@ -216,6 +217,11 @@
   resize: none;
   color: #3a3026;
   overflow-y: auto;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   caret-color: var(--accent);
 }
 #md-editor:focus { outline: none; box-shadow: inset 0 0 0 1px rgba(200,100,47,0.15); border-radius: 4px; }
@@ -818,6 +824,45 @@ input[type="date"].settings-input { cursor: pointer; }
    Emoji 面板
    ============================================================ */
 
+.quick-insert-panel {
+  position: fixed;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 150;
+  width: min(360px, calc(100vw - 28px));
+  max-height: min(360px, calc(100dvh - 120px));
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid rgba(var(--card-text-rgb),0.1);
+  border-radius: 18px;
+  background: rgba(255,251,246,0.97);
+  box-shadow: 0 18px 40px rgba(var(--shadow-dark-rgb),0.14);
+  backdrop-filter: blur(18px) saturate(1.05);
+}
+
+.quick-insert-panel__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid rgba(var(--card-text-rgb),0.12);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.78);
+  color: #604b38;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.quick-insert-panel__button:hover {
+  background: #fff;
+}
+
 #emoji-panel {
   position: fixed; bottom: 70px; left: 50%;
   transform: translateX(-50%) scale(0.9);
@@ -880,15 +925,30 @@ input[type="date"].settings-input { cursor: pointer; }
     overflow: visible;
   }
 
+  body:has(.app-layout) {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  #root:has(.app-layout) {
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
   .toolbar {
     position: sticky;
     top: 0;
+    flex-direction: column;
     align-items: stretch;
-    gap: 6px;
-    padding: 8px 8px 7px;
+    gap: 5px;
+    padding: calc(8px + env(safe-area-inset-top)) 8px 7px;
   }
 
   .toolbar-main {
+    width: 100%;
     flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
@@ -906,6 +966,10 @@ input[type="date"].settings-input { cursor: pointer; }
     display: none;
   }
 
+  .desktop-only-action {
+    display: none !important;
+  }
+
   .toolbar button,
   .aspect-ratio-switcher button {
     min-height: 36px;
@@ -918,28 +982,66 @@ input[type="date"].settings-input { cursor: pointer; }
   }
 
   .toolbar-status {
-    max-width: 38%;
+    max-width: 100%;
   }
 
   #live-badge {
     max-width: 100%;
-    min-height: 34px;
+    min-height: 28px;
     display: inline-flex;
     align-items: center;
   }
 
+  .mobile-panel-switcher {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 7px 10px;
+    background:
+      linear-gradient(180deg, rgba(255,251,246,0.96), rgba(248,240,229,0.92));
+    border-bottom: 1px solid rgba(var(--card-text-rgb),0.1);
+    box-shadow: 0 8px 20px rgba(var(--shadow-dark-rgb),0.06);
+    z-index: 80;
+  }
+
+  .mobile-panel-switcher button {
+    min-height: 40px;
+    border: 1px solid rgba(var(--card-text-rgb),0.12);
+    border-radius: 14px;
+    background: rgba(255,255,255,0.76);
+    color: #705b43;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0;
+    cursor: pointer;
+  }
+
+  .mobile-panel-switcher button.active {
+    background: #2e2418;
+    border-color: #2e2418;
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(46,36,24,0.16);
+  }
+
   .app-layout {
-    flex: none;
+    flex: 1 1 auto;
     min-height: 0;
     flex-direction: column;
-    overflow: visible;
+    overflow: hidden;
+  }
+
+  .app-layout--mobile-edit .pane-preview,
+  .app-layout--mobile-preview .pane-editor {
+    display: none;
   }
 
   .pane-editor {
     width: 100% !important;
-    flex: none !important;
-    height: min(68vh, 620px);
-    min-height: 520px;
+    flex: 1 1 auto !important;
+    height: auto;
+    min-height: 0;
     max-height: none;
     border-right: none !important;
     border-bottom: 1px solid rgba(var(--card-text-rgb),0.1);
@@ -1054,22 +1156,23 @@ input[type="date"].settings-input { cursor: pointer; }
     font-size: 16px;
     line-height: 1.68;
     padding: 18px 14px 28px;
+    min-height: 0;
   }
 
   .pane-preview {
-    flex: none;
-    min-height: 60vh;
-    overflow: visible;
-    padding: 16px 8px 34px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    padding: 14px 8px calc(24px + env(safe-area-inset-bottom));
   }
 
   .preview-scroll {
-    flex: none;
-    min-height: 60vh;
-    align-items: flex-start;
+    flex: 1 1 auto;
+    min-height: 0;
+    align-items: center;
     overflow-x: auto;
-    overflow-y: visible;
-    padding: 0 8px 28px;
+    overflow-y: auto;
+    padding: 0 8px 24px;
   }
 
   .xhs-stage,
@@ -1079,11 +1182,53 @@ input[type="date"].settings-input { cursor: pointer; }
   }
 
   #settings-panel {
-    width: min(420px, calc(100vw - 28px));
+    width: 100vw;
+    height: 100dvh;
+    border-left: none;
   }
 
   .settings-body {
     padding-bottom: calc(34px + env(safe-area-inset-bottom));
+  }
+
+  .quick-insert-panel {
+    left: 10px;
+    right: 10px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    width: auto;
+    max-height: min(46dvh, 340px);
+    transform: none;
+    justify-content: center;
+  }
+
+  .quick-insert-panel__button {
+    flex: 1 1 112px;
+    justify-content: center;
+    min-height: 42px;
+    font-size: 13px;
+  }
+
+  #emoji-panel {
+    left: 10px;
+    right: 10px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    width: auto;
+    max-height: min(46dvh, 320px);
+    transform: scale(0.96);
+  }
+
+  #emoji-panel.open {
+    transform: scale(1);
+  }
+
+  .emoji-grid {
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+
+  .emoji-btn {
+    min-height: 38px;
+    font-size: 19px;
   }
 
   .selection-toolbar {

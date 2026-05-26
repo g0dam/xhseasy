@@ -52,6 +52,8 @@ type TemplateSafeSegment = {
   end: number;
 };
 
+type MobilePanel = "edit" | "preview";
+
 const EDITOR_PANE_WIDTH_KEY = "xhs_paiban_editor_pane_width_v1";
 const COMPONENT_SIDEBAR_COLLAPSED_KEY = "xhs_paiban_component_sidebar_collapsed_v1";
 const DEFAULT_EDITOR_PANE_PERCENT = 46;
@@ -200,6 +202,7 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [templateGalleryOpen, setTemplateGalleryOpen] = useState(false);
   const [editorHidden, setEditorHidden] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>("edit");
   const [componentSidebarCollapsed, setComponentSidebarCollapsed] = useState(() =>
     loadStoredComponentSidebarCollapsed()
   );
@@ -267,6 +270,12 @@ export function App() {
     () => ({ "--app-editor-w": `${editorPanePercent}%` }) as CSSProperties,
     [editorPanePercent]
   );
+
+  const appLayoutClassName = [
+    "app-layout",
+    editorPaneResizing ? "app-layout--resizing" : "",
+    editorHidden || mobilePanel === "preview" ? "app-layout--mobile-preview" : "app-layout--mobile-edit",
+  ].filter(Boolean).join(" ");
 
   useEffect(() => {
     try {
@@ -798,7 +807,7 @@ export function App() {
             window.history.replaceState(null, "", window.location.pathname);
           }}>首页</button>
           <button className="primary" onClick={scheduleLive}>刷新预览</button>
-          <button onClick={() => setEditorHidden((h) => !h)}>
+          <button className="desktop-only-action" onClick={() => setEditorHidden((h) => !h)}>
             {editorHidden ? "显示编辑区" : "隐藏编辑区"}
           </button>
 
@@ -851,6 +860,28 @@ export function App() {
         </div>
       </div>
 
+      <div className="mobile-panel-switcher" aria-label="手机工作区切换">
+        <button
+          type="button"
+          className={mobilePanel === "edit" ? "active" : ""}
+          aria-pressed={mobilePanel === "edit"}
+          onClick={() => setMobilePanel("edit")}
+        >
+          写作
+        </button>
+        <button
+          type="button"
+          className={mobilePanel === "preview" ? "active" : ""}
+          aria-pressed={mobilePanel === "preview"}
+          onClick={() => {
+            scheduleLive();
+            setMobilePanel("preview");
+          }}
+        >
+          预览
+        </button>
+      </div>
+
       <EmojiPanel open={emojiOpen} onSelect={handleEmojiSelect} onClose={() => setEmojiOpen(false)} />
 
       <QuickInsertPanel
@@ -876,7 +907,7 @@ export function App() {
 
       {/* 主内容 */}
       <div
-        className={`app-layout${editorPaneResizing ? " app-layout--resizing" : ""}`}
+        className={appLayoutClassName}
         ref={layoutRef}
         style={appLayoutStyle}
       >
@@ -942,6 +973,8 @@ export function App() {
                     onScroll={() => { applyScrollRatio("editor"); updateSelectionToolbar(); }}
                     onBlur={() => setSelectionToolbar((prev) => ({ ...prev, open: false }))}
                     placeholder="在这里输入 Markdown..."
+                    wrap="hard"
+                    cols={40}
                     spellCheck={false}
                   />
                 </div>
